@@ -1,7 +1,8 @@
-import os 
+import os
 import uuid
 import pandas as pd
 import psycopg2
+from psycopg2.extras import RealDictCursor
 from psycopg2 import sql
 import streamlit as st
 
@@ -29,13 +30,20 @@ def get_db_connection():
         #make sure to use the correct username for your schema is the same as one in DB
         options="-c search_path=support_app, public",   
     )
-def execute_dml(query, prams=None):
-    """Execute a query and return a Pandas Dataframe"""
+def run_query(query, params=None):
+    """Execute SELECT queries and return results as a pandas DataFrame."""
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(query, prams)
+            cur.execute(query, params)
             res = cur.fetchall()
             return pd.DataFrame(res) if res else pd.DataFrame()
+
+def execute_dml(query, params=None):
+    """Executa comandos INSERT, UPDATE, DELETE."""
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(query, params)
+        conn.commit()
 #navigation menu sidebar
 st.sidebar.title("🎫 SSupport Portal")
 menu_option = st.sidebar.radio(
@@ -221,8 +229,9 @@ elif menu_option == "📊 Statistics":
     col4.metric("Resolved tickets", len(df_all[df_all["status"] == "Resolved"]))
 
     st.markdown("---")
+    
     #Spliting the distribuition graphs into two columns
-    chat_col1, chat_col2 = st.columns(2)
+    chart_col1, chart_col2 = st.columns(2)
 
     with chart_col1:
         st.subheader("By Category")

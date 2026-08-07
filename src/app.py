@@ -4,8 +4,69 @@ import pandas as pd
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from psycopg2 import sql
+from abc import ABC, abstractmethod
 import streamlit as st
 from databricks.sdk.core import Config
+
+class BaseTextInput(ABC):
+    @abstractmethod
+    def render(self):
+        """Render the text input widget."""
+        pass
+
+    @abstractmethod
+    def get_value(self):
+        """Return the current widget value."""
+        pass
+
+    @abstractmethod
+    def set_value(self, value):
+        """Update the current widget value."""
+        pass
+
+class text_input(BaseTextInput):
+    def __init__(
+        self,
+        label,
+        value="",
+        max_chars=None,
+        key=None,
+        type="default",
+        help=None,
+        placeholder=None,
+        disabled=False,
+        label_visibility="visible",
+    ):
+        self.label = label
+        self.value = value
+        self.max_chars = max_chars
+        self.key = key
+        self.type = type
+        self.help = help
+        self.placeholder = placeholder
+        self.disabled = disabled
+        self.label_visibility = label_visibility
+        self._current_value = value
+
+    def render(self):
+        self._current_value = st.text_input(
+            self.label,
+            value=self._current_value,
+            max_chars=self.max_chars,
+            key=self.key,
+            type=self.type,
+            help=self.help,
+            placeholder=self.placeholder,
+            disabled=self.disabled,
+            label_visibility=self.label_visibility,
+        )
+        return self._current_value
+
+    def get_value(self):
+        return self._current_value
+
+    def set_value(self, value):
+        self._current_value = value
 
 #first we need to configure the page
 st.set_page_config(
@@ -127,7 +188,7 @@ if menu_option == "📋 Visualize tickets ":
             #Message history
             st.subheader("💬 Message History")
             df_msgs = run_query(
-                "SELECT * FROM support_app.ticket_messages WHERE ticket_id = %s ORDER BY created_at ASC:",
+                "SELECT * FROM support_app.ticket_messages WHERE ticket_id = %s ORDER BY created_at ASC",
                 (selected_ticket_id,)
             )
 
@@ -164,62 +225,60 @@ elif menu_option == "➕ Create a new Ticket":
     st.header("➕ Create a new Ticket")
 
     with st.form("create_ticket_form", clear_on_submit=True):
-        title = st.text_input("Ticket Title")
-        created_by = st.text_input("Your Name or E-mail")
+        title_input = text_input("Ticket Title", key="ticket_title")
+        title = title_input.render()
+        created_by_input = text_input("Your Name or e-mail", key="ticket_created_by")
+        created_by = created_by_input.render()
 
-        #new category inserted
         category = st.selectbox(
             "Category", [
-            "Technical Support",
-            "Billing & Payments",
-            "Account Management",
-            "Feature Requests",
-            "General",],
+                "Technical Support",
+                "Billing & Payments",
+                "Account Management",
+                "Feature Requests",
+                "General",
+            ],
         )
-    #New Priority inserted
-    priority = st.selectbox(
-        "Priority", [
-            "Low", 
-            "Medium", 
-            "High", 
-            "Critical"]
-    )    
-    initial_message = st.text_area("Description of the issue or request")
 
-    submitted = st.form_submit_button("Create Ticket")
+        priority = st.selectbox(
+            "Priority", [
+                "Low",
+                "Medium",
+                "High",
+                "Critical",
+            ]
+        )
 
-    if submitted:
-        if not title or not created_by or not created_by or not initial_message:
-            st.error(
-                "Please fill in all fields required fields marked with (*)"
-            )
-        else:
-            new_ticket_id = f"tkt_{uuid.uuid4().hex[:6]}"
-            new_msg_id = f"msg_{uuid.uuid4().hex[:6]}"
+        initial_message = st.text_area("Description of the issue or request")
 
-            try:
-                #insert ticket
-                execute_dml(
-                    "INSERT INTO support_app.tickets (ticket_id, title, created_by, status, priority, category) VALUES (%s, %s, 'open', %s, %s, %s);"
-                    (new_ticket_id, title, priority, category, created_by),
-                )
-                #insert initial message
-                execute_dml(
-                    "INSERT INTO support_app.ticket_messages (message_id, ticket_id, message_text, author) VALUES (%s, %s, %s, %s);",
-                    (new_msg_id, new_ticket_id, initial_message, created_by),
-                )
-                st.success(
-                    f"Ticket **{new_ticket_id}** successfully created in lakebase!"
-                )
-            except Exception as e:
-                st.error(f"Error saving ticket in database: {e}")
+        submitted = st.form_submit_button("Create Ticket")
+
+        if submitted:
+            if not title or not created_by or not initial_message:
+                st.error("Please fill in all fields required fields marked with (*)")
+            else:
+                new_ticket_id = f"tkt_{uuid.uuid4().hex[:6]}"
+                new_msg_id = f"msg_{uuid.uuid4().hex[:6]}"
+
+                try:
+                    execute_dml(
+                        "INSERT INTO support_app.tickets (ticket_id, title, created_by, status, priority, category) VALUES (%s, %s, %s, 'Open', %s, %s);",
+                        (new_ticket_id, title, created_by, priority, category),
+                    )
+                    execute_dml(
+                        "INSERT INTO support_app.ticket_messages (message_id, ticket_id, message_text, author) VALUES (%s, %s, %s, %s);",
+                        (new_msg_id, new_ticket_id, initial_message, created_by),
+                    )
+                    st.success(f"Ticket **{new_ticket_id}** successfully created in lakebase!")
+                except Exception as e:
+                    st.error(f"Error saving ticket in database: {e}")
 # ==============================================================================
 #Option 3
 
 elif menu_option == "📊 Statistics":
     st.header("📊 General Ticket Menu")
 
-    df_all = run_query("SELECT * FROM support_app.tickets:")
+    df_all = run_query("SELECT * FROM support_app.tickets")
 
     if df_all.empty:
         st.info("No tickets found in the database.")

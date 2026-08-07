@@ -74,16 +74,6 @@ st.set_page_config(
 )
 
 #Connect to lakebase postgres
-def get_config(key, default_val):
-    """SEARCHING FOR CONFIGURATION VALUES IN ENVIRONMENT VARIABLES OR STREAMLIT SECRETS."""
-    env_val = os.getenv(key)
-    if env_val is not None:
-        return env_val
-        
-    try:
-        return st.secrets.get(key, default_val)
-    except FileNotFoundError:
-        return default_val
 
 def get_db_connection():
     """Connect to Lakebase using OAuth token from the app's service principal."""

@@ -5,6 +5,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from psycopg2 import sql
 import streamlit as st
+from databricks.sdk.core import Config
 
 #first we need to configure the page
 st.set_page_config(
@@ -24,14 +25,16 @@ def get_config(key, default_val):
         return default_val
 
 def get_db_connection():
-    """Connecting to Lakebase """
+    """Connect to Lakebase using OAuth token from the app's service principal."""
+    cfg = Config()
     return psycopg2.connect(
-        host=get_config("LAKEBASE_HOST", "localhost"),
-        port=int(get_config("LAKEBASE_PORT", "5432")),
-        dbname=get_config("LAKEBASE_DB", "databricks_postgres"),
-        user=get_config("LAKEBASE_USER", "postgres"),
-        password=get_config("LAKEBASE_PASSWORD", ""),
-        options="-c search_path=ai_support_app,public",
+        host=os.environ["PGHOST"],
+        port=int(os.getenv("PGPORT", "5432")),
+        dbname=os.getenv("PGDATABASE", "databricks_postgres"),
+        user=os.environ["PGUSER"],
+        password=cfg.oauth_token().access_token,
+        sslmode="require",
+        options="-c search_path=support_app,public",
     )
 def run_query(query, params=None):
     """Execute SELECT queries and return results as a pandas DataFrame."""

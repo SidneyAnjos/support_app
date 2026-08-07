@@ -1,1 +1,4 @@
-command: ["streamlit", "run", "src/app.py"]
+command: ['streamlit', 'run', 'src/app.py']
+env:
+  - name: 'PGDATABASE'
+    value: 'databricks_postgres'

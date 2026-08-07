@@ -274,7 +274,6 @@ elif menu_option == "➕ Create a new Ticket":
                     st.error(f"Error saving ticket in database: {e}")
 # ==============================================================================
 #Option 3
-
 elif menu_option == "📊 Statistics":
     st.header("📊 General Ticket Menu")
 
@@ -284,23 +283,23 @@ elif menu_option == "📊 Statistics":
         st.info("No tickets found in the database.")
     else:
         col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Total tickets", len(df_all))
-    col2.metric(
-        "Open tickets", len(df_all[df_all["status"] == "Open"]), delta_color="normal"
-    )
-    col3.metric(
-        "In Progress tickets", len(df_all[df_all["status"] == "In Progress"]),
-    )
-    col4.metric("Resolved tickets", len(df_all[df_all["status"] == "Resolved"]))
+        col1.metric("Total tickets", len(df_all))
+        col2.metric(
+            "Open tickets", len(df_all[df_all["status"] == "Open"]), delta_color="normal"
+        )
+        col3.metric(
+            "In Progress tickets", len(df_all[df_all["status"] == "In Progress"]),
+        )
+        col4.metric("Resolved tickets", len(df_all[df_all["status"] == "Resolved"]))
 
-    st.markdown("---")
-    
-    #Spliting the distribuition graphs into two columns
-    chart_col1, chart_col2 = st.columns(2)
+        st.markdown("---")
 
-    with chart_col1:
-        st.subheader("By Category")
-        st.bar_chart(df_all["category"].value_counts())
-    with chart_col2:
-        st.subheader("By Priority")
-        st.bar_chart(df_all["priority"].value_counts())
+        # Splitting the distribution graphs into two columns
+        chart_col1, chart_col2 = st.columns(2)
+
+        with chart_col1:
+            st.subheader("By Category")
+            st.bar_chart(df_all["category"].value_counts())
+        with chart_col2:
+            st.subheader("By Priority")
+            st.bar_chart(df_all["priority"].value_counts())

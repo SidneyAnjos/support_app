@@ -213,9 +213,9 @@ if menu_option == "📋 Visualize tickets ":
                     else:
                         new_msg_id = f"msg_{uuid.uuid4().hex[:6]}"
                         execute_dml(
-                            "INSERT INTO support_app.ticket_messages (message_id, ticket_id, message_text, author) VALUES (%S, %S, %S, %S);",
+                            "INSERT INTO support_app.ticket_messages (message_id, ticket_id, message_text, author) VALUES (%s, %s, %s, %s);",
                             (new_msg_id, selected_ticket_id, message_input, author_input),
-                        )
+)
                         st.success("Message sent successfully!")
                         st.rerun()
 # ==============================================================================

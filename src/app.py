@@ -12,23 +12,26 @@ st.set_page_config(
 )
 
 #Connect to lakebase postgres
+def get_config(key, default_val):
+    """SEARCHING FOR CONFIGURATION VALUES IN ENVIRONMENT VARIABLES OR STREAMLIT SECRETS."""
+    env_val = os.getenv(key)
+    if env_val is not None:
+        return env_val
+        
+    try:
+        return st.secrets.get(key, default_val)
+    except FileNotFoundError:
+        return default_val
+
 def get_db_connection():
-    """Connect to lakebase postgres database and return the connection object or Streamlit Secrets."""
+    """Connecting to Lakebase """
     return psycopg2.connect(
-        host=os.getenv(
-            "LAKEBASE_HOST", st.secrets.get("LAKEBASE_HOST", "localhost")
-        ),
-        port=int(
-            os.getenv("LAKEBASE_PORT", st.secrets.get("LAKEBASE_PORT", "5432"))
-        ),
-        dbname=os.getenv(
-            "LAKEBASE_DB", st.secrets.get("LAKEBASE_DB", "databricks_postgres")
-        ),
-        password=os.getenv(
-            "LAKEBASE_PASSWORD", st.secrets.get("LAKEBASE_PASSWORD", "")
-        ),
-        #make sure to use the correct username for your schema is the same as one in DB
-        options="-c search_path=support_app, public",   
+        host=get_config("LAKEBASE_HOST", "localhost"),
+        port=int(get_config("LAKEBASE_PORT", "5432")),
+        dbname=get_config("LAKEBASE_DB", "databricks_postgres"),
+        user=get_config("LAKEBASE_USER", "postgres"),
+        password=get_config("LAKEBASE_PASSWORD", ""),
+        options="-c search_path=ai_support_app,public",
     )
 def run_query(query, params=None):
     """Execute SELECT queries and return results as a pandas DataFrame."""
@@ -39,7 +42,7 @@ def run_query(query, params=None):
             return pd.DataFrame(res) if res else pd.DataFrame()
 
 def execute_dml(query, params=None):
-    """Executa comandos INSERT, UPDATE, DELETE."""
+    """Executes INSERT, UPDATE, DELETE."""
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(query, params)

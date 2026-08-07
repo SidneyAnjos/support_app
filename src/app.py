@@ -195,7 +195,7 @@ if menu_option == "📋 Visualize tickets ":
             if not df_msgs.empty:
                 for _, msg in df_msgs.iterrows():
                     with st.chat_message(msg["author"]):
-                        st.write(f"**{msg['author']}** - *{msg['created_at']}*")
+                        st.write(f"**{msg['author']}** - *{msg['created_at'].strftime('%H:%M')}*")
                         st.write(msg["message_text"])
             else:
                 st.info("No new messages for this ticket.")

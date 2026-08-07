@@ -1,2 +1,7 @@
 
 .databricks
+secrets.toml
+.env
+.streamlit/secrets.toml
+__pycache__/
+.venv/
